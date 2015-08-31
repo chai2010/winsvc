@@ -176,7 +176,7 @@ func GetAppPath() (string, error) {
 		if !fi.Mode().IsDir() {
 			return p, nil
 		}
-		err = fmt.Errorf("%s is directory", p)
+		err = fmt.Errorf("winsvc.GetAppPath: %s is directory", p)
 	}
 	if filepath.Ext(p) == "" {
 		p += ".exe"
@@ -185,7 +185,7 @@ func GetAppPath() (string, error) {
 			if !fi.Mode().IsDir() {
 				return p, nil
 			}
-			err = fmt.Errorf("%s is directory", p)
+			err = fmt.Errorf("winsvc.GetAppPath: %s is directory", p)
 		}
 	}
 	return "", err
@@ -194,7 +194,7 @@ func GetAppPath() (string, error) {
 func InServiceMode() bool {
 	isIntSess, err := svc.IsAnInteractiveSession()
 	if err != nil {
-		log.Fatalf("windows.InServiceMode: svc.IsAnInteractiveSession(): err = %v", err)
+		log.Fatalf("winsvc.InServiceMode: svc.IsAnInteractiveSession(): err = %v", err)
 	}
 	return isIntSess
 }
@@ -208,7 +208,7 @@ func InstallService(appPath, name, desc string) error {
 	s, err := m.OpenService(name)
 	if err == nil {
 		s.Close()
-		return fmt.Errorf("service %s already exists", name)
+		return fmt.Errorf("winsvc.InstallService: service %s already exists", name)
 	}
 	s, err = m.CreateService(name, appPath, mgr.Config{
 		DisplayName: desc,
@@ -221,7 +221,7 @@ func InstallService(appPath, name, desc string) error {
 	err = eventlog.InstallAsEventCreate(name, eventlog.Error|eventlog.Warning|eventlog.Info)
 	if err != nil {
 		s.Delete()
-		return fmt.Errorf("SetupEventLogSource() failed: %s", err)
+		return fmt.Errorf("winsvc.InstallService: InstallAsEventCreate failed, err = %v", err)
 	}
 	return nil
 }
@@ -234,7 +234,7 @@ func RemoveService(name string) error {
 	defer m.Disconnect()
 	s, err := m.OpenService(name)
 	if err != nil {
-		return fmt.Errorf("service %s is not installed", name)
+		return fmt.Errorf("winsvc.RemoveService: service %s is not installed", name)
 	}
 	defer s.Close()
 	err = s.Delete()
@@ -243,7 +243,7 @@ func RemoveService(name string) error {
 	}
 	err = eventlog.Remove(name)
 	if err != nil {
-		return fmt.Errorf("RemoveEventLogSource() failed: %s", err)
+		return fmt.Errorf("winsvc.RemoveService: eventlog.Remove failed: %v", err)
 	}
 	return nil
 }
@@ -256,12 +256,12 @@ func StartService(name string) error {
 	defer m.Disconnect()
 	s, err := m.OpenService(name)
 	if err != nil {
-		return fmt.Errorf("could not access service: %v", err)
+		return fmt.Errorf("winsvc.StartService: could not access service: %v", err)
 	}
 	defer s.Close()
 	err = s.Start("p1", "p2", "p3")
 	if err != nil {
-		return fmt.Errorf("could not start service: %v", err)
+		return fmt.Errorf("winsvc.StartService: could not start service: %v", err)
 	}
 	return nil
 }
@@ -281,22 +281,22 @@ func controlService(name string, c svc.Cmd, to svc.State) error {
 	defer m.Disconnect()
 	s, err := m.OpenService(name)
 	if err != nil {
-		return fmt.Errorf("could not access service: %v", err)
+		return fmt.Errorf("winsvc.controlService: could not access service: %v", err)
 	}
 	defer s.Close()
 	status, err := s.Control(c)
 	if err != nil {
-		return fmt.Errorf("could not send control=%d: %v", c, err)
+		return fmt.Errorf("winsvc.controlService: could not send control=%d: %v", c, err)
 	}
 	timeout := time.Now().Add(10 * time.Second)
 	for status.State != to {
 		if timeout.Before(time.Now()) {
-			return fmt.Errorf("timeout waiting for service to go to state=%d", to)
+			return fmt.Errorf("winsvc.controlService: timeout waiting for service to go to state=%d", to)
 		}
 		time.Sleep(300 * time.Millisecond)
 		status, err = s.Query()
 		if err != nil {
-			return fmt.Errorf("could not retrieve service status: %v", err)
+			return fmt.Errorf("winsvc.controlService: could not retrieve service status: %v", err)
 		}
 	}
 	return nil
@@ -320,12 +320,12 @@ func RunAsService(name string, start, stop func(), isDebug bool) (err error) {
 		run = debug.Run
 	}
 
-	elog.Info(1, fmt.Sprintf("uis: starting %s service", name))
+	elog.Info(1, fmt.Sprintf("winsvc.RunAsService: starting %s service", name))
 	if err = run(name, &winService{Start: start, Stop: stop}); err != nil {
 		elog.Error(1, fmt.Sprintf("%s service failed: %v", name, err))
 		return
 	}
-	elog.Info(1, fmt.Sprintf("uis: %s service stopped", name))
+	elog.Info(1, fmt.Sprintf("winsvc.RunAsService: %s service stopped", name))
 	return
 }
 
@@ -335,7 +335,7 @@ type winService struct {
 }
 
 func (p *winService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
-	elog.Info(1, "winService.Execute:"+"begin")
+	elog.Info(1, "winsvc.Execute:"+"begin")
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown | svc.AcceptPauseAndContinue
 	changes <- svc.Status{State: svc.StartPending}
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
@@ -359,13 +359,13 @@ loop:
 			case svc.Continue:
 				changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 			default:
-				elog.Error(1, fmt.Sprintf("unexpected control request #%d", c))
+				elog.Error(1, fmt.Sprintf("winsvc.Execute:: unexpected control request #%d", c))
 			}
 		}
 	}
 	changes <- svc.Status{State: svc.StopPending}
 	p.Stop()
 
-	elog.Info(1, "winService.Execute:"+"end")
+	elog.Info(1, "winsvc.Execute:"+"end")
 	return
 }
