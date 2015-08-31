@@ -9,6 +9,8 @@ Package winsvc provids easy windows service support.
 
 Example
 
+This a simple windows service example:
+
 	package main
 
 	import (
