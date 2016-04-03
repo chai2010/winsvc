@@ -199,7 +199,7 @@ func InServiceMode() bool {
 	return isIntSess
 }
 
-func InstallService(appPath, name, desc string) error {
+func InstallService(appPath, name, desc string, params ...string) error {
 	m, err := mgr.Connect()
 	if err != nil {
 		return err
@@ -213,7 +213,9 @@ func InstallService(appPath, name, desc string) error {
 	s, err = m.CreateService(name, appPath, mgr.Config{
 		DisplayName: desc,
 		StartType:   windows.SERVICE_AUTO_START,
-	})
+	},
+		params...,
+	)
 	if err != nil {
 		return err
 	}
