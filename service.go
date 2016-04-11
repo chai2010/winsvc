@@ -210,10 +210,11 @@ func InstallService(appPath, name, desc string, params ...string) error {
 		s.Close()
 		return fmt.Errorf("winsvc.InstallService: service %s already exists", name)
 	}
-	s, err = m.CreateService(name, appPath, mgr.Config{
-		DisplayName: desc,
-		StartType:   windows.SERVICE_AUTO_START,
-	},
+	s, err = m.CreateService(name, appPath,
+		mgr.Config{
+			DisplayName: desc,
+			StartType:   windows.SERVICE_AUTO_START,
+		},
 		params...,
 	)
 	if err != nil {
