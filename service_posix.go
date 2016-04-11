@@ -56,3 +56,6 @@ func StartService(name string) error {
 func StopService(name string) error {
 	panic("winsvc: only support windows!")
 }
+func QueryService(name string) (status string, err error) {
+	panic("winsvc: only support windows!")
+}

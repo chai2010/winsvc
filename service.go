@@ -275,6 +275,42 @@ func StopService(name string) error {
 	return nil
 }
 
+func QueryService(name string) (status string, err error) {
+	m, err := mgr.Connect()
+	if err != nil {
+		return
+	}
+	defer m.Disconnect()
+	s, err := m.OpenService(name)
+	if err != nil {
+		err = fmt.Errorf("winsvc.QueryService: could not access service: %v", err)
+		return
+	}
+	defer s.Close()
+
+	statusCode, err = s.Query()
+	if err != nil {
+		return
+	}
+	switch statusCode {
+	case svc.Stopped:
+		return "Stopped", nil
+	case svc.StartPending:
+		return "StartPending", nil
+	case svc.StopPending:
+		return "StopPending", nil
+	case svc.Running:
+		return "Running", nil
+	case svc.ContinuePending:
+		return "ContinuePending", nil
+	case svc.PausePending:
+		return "PausePending", nil
+	case svc.Paused:
+		return "Paused", nil
+	}
+	panic("unreached")
+}
+
 func controlService(name string, c svc.Cmd, to svc.State) error {
 	m, err := mgr.Connect()
 	if err != nil {
