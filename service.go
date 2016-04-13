@@ -289,11 +289,11 @@ func QueryService(name string) (status string, err error) {
 	}
 	defer s.Close()
 
-	statusCode, err = s.Query()
+	statusCode, err := s.Query()
 	if err != nil {
 		return
 	}
-	switch statusCode {
+	switch statusCode.State {
 	case svc.Stopped:
 		return "Stopped", nil
 	case svc.StartPending:
