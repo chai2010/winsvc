@@ -119,7 +119,7 @@ This a simple windows service example:
 		}
 
 		// run as service
-		if !winsvc.InServiceMode() {
+		if !winsvc.IsAnInteractiveSession() {
 			log.Println("main:", "runService")
 			if err := winsvc.RunAsService(*flagServiceName, StartServer, StopServer, false); err != nil {
 				log.Fatalf("svc.Run: %v\n", err)
@@ -192,6 +192,14 @@ func GetAppPath() (string, error) {
 }
 
 func InServiceMode() bool {
+	isIntSess, err := svc.IsAnInteractiveSession()
+	if err != nil {
+		log.Fatalf("winsvc.InServiceMode: svc.IsAnInteractiveSession(): err = %v", err)
+	}
+	return isIntSess
+}
+
+func IsAnInteractiveSession() bool {
 	isIntSess, err := svc.IsAnInteractiveSession()
 	if err != nil {
 		log.Fatalf("winsvc.InServiceMode: svc.IsAnInteractiveSession(): err = %v", err)

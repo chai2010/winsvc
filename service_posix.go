@@ -41,6 +41,9 @@ func GetAppPath() (string, error) {
 func InServiceMode() bool {
 	panic("winsvc: only support windows!")
 }
+func IsAnInteractiveSession() bool {
+	panic("winsvc: only support windows!")
+}
 func InstallService(appPath, name, desc string, params ...string) error {
 	panic("winsvc: only support windows!")
 }
