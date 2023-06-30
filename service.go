@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 /*
@@ -220,7 +221,8 @@ func InstallService(appPath, name, desc string, params ...string) error {
 	}
 	s, err = m.CreateService(name, appPath,
 		mgr.Config{
-			DisplayName: desc,
+			DisplayName: name,
+			Description: desc,
 			StartType:   windows.SERVICE_AUTO_START,
 		},
 		params...,
